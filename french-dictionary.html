@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dictionnaire – French ⇄ English</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📕</text></svg>">
+<style>
+:root{--bg:#0a0a0b;--card:#151517;--ink:#f5f2ed;--mut:#9b958c;--acc:#ff7a1a;--line:#2a2a2e;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(900px 420px at 50% -120px,rgba(255,122,26,.22),transparent 70%),var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:48px 16px 56px}
+h1{font:700 3rem/1.05 "Iowan Old Style",Georgia,serif;margin:0;letter-spacing:-1px;cursor:pointer}
+h1::after{content:".";color:var(--acc)}
+.sub{color:var(--mut);margin:6px 0 20px}
+input{width:100%;font:inherit;font-size:1.15rem;padding:15px 18px;border:2px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+input::placeholder{color:var(--mut)}
+input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 4px rgba(255,122,26,.18)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 14px;transition:border-color .15s,color .15s}
+button:hover{border-color:var(--acc);color:var(--acc)}
+button.on,button.on:hover{background:var(--acc);color:#0a0a0b;border-color:var(--acc);font-weight:600}
+.modes,.abc{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.abc button{padding:3px 11px;font-size:.9rem}
+.cnt{color:var(--mut);font-size:.88rem;margin:6px 0 12px}
+.r{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:14px;padding:14px 18px;margin:10px 0}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fr{font:700 1.45rem/1.2 "Iowan Old Style",Georgia,serif}
+.pos{color:var(--acc);font-size:.78rem;text-transform:uppercase;letter-spacing:.1em}
+.top button{margin-left:auto;padding:2px 10px;font-size:.9rem}
+.en{color:var(--ink);margin-top:4px}
+.tag{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--acc);font-weight:700;margin:22px 0 -4px}
+.none{text-align:center;color:var(--mut);padding:36px 0}
+</style>
+</head>
+<body>
+<main>
+<h1 id="t">Dictionnaire</h1>
+<p class="sub">French ⇄ English. Search in either language.</p>
+<input id="q" type="search" placeholder="Search a word… chat, cat, s’il vous plaît" autocomplete="off" autocapitalize="none" spellcheck="false">
+<div class="modes" id="modes"></div>
+<div id="out"></div>
+</main>
+<script>
+/* ===== WORD LIST: add words as new lines =====
+   format:  french|type|english 1, english 2
+   types: m f (nouns) v a d p c r n (number) x (phrase)
+================================================ */
+const DATA=`
+bonjour|x|hello, good morning
+bonsoir|x|good evening
+bonne nuit|x|good night
+salut|x|hi, bye
+au revoir|x|goodbye
+merci|x|thank you, thanks
+s'il vous plaît|x|please
+de rien|x|you're welcome
+excusez-moi|x|excuse me
+pardon|x|sorry, pardon
+oui|d|yes
+non|d|no
+peut-être|d|maybe, perhaps
+ça va|x|I'm fine, how are you
+je ne comprends pas|x|I don't understand
+enchanté|x|nice to meet you
+bienvenue|x|welcome
+à bientôt|x|see you soon
+bon appétit|x|enjoy your meal
+santé|x|cheers, health
+bonne chance|x|good luck
+félicitations|x|congratulations
+je|r|I
+tu|r|you (informal)
+il|r|he, it
+elle|r|she, it
+nous|r|we, us
+vous|r|you (formal or plural)
+ils|r|they
+on|r|one, we (informal)
+qui|r|who, whom
+que|r|that, what, which
+où|d|where
+quand|d|when
+pourquoi|d|why
+comment|d|how
+combien|d|how much, how many
+quel|a|which, what
+à|p|to, at, in
+de|p|of, from
+dans|p|in, inside
+sur|p|on, on top of
+sous|p|under
+avec|p|with
+sans|p|without
+pour|p|for, in order to
+par|p|by, through
+chez|p|at the home of
+entre|p|between
+devant|p|in front of
+derrière|p|behind
+vers|p|toward
+pendant|p|during
+avant|p|before
+après|p|after
+depuis|p|since
+et|c|and
+ou|c|or
+mais|c|but
+donc|c|so, therefore
+parce que|c|because
+si|c|if, so
+comme|c|like, as
+aussi|d|also, too
+très|d|very
+trop|d|too much, too
+assez|d|enough, quite
+beaucoup|d|a lot, much
+peu|d|little, few
+plus|d|more
+moins|d|less
+toujours|d|always, still
+jamais|d|never, ever
+souvent|d|often
+parfois|d|sometimes
+déjà|d|already
+encore|d|again, still
+maintenant|d|now
+aujourd'hui|d|today
+hier|d|yesterday
+demain|d|tomorrow
+ici|d|here
+là|d|there
+bien|d|well, good
+mal|d|badly
+vite|d|quickly, fast
+tout|a|all, every
+chaque|a|each, every
+un|n|one
+deux|n|two
+trois|n|three
+quatre|n|four
+cinq|n|five
+six|n|six
+sept|n|seven
+huit|n|eight
+neuf|n|nine
+dix|n|ten
+vingt|n|twenty
+cent|n|one hundred
+mille|n|one thousand
+jour|m|day
+semaine|f|week
+mois|m|month
+an|m|year
+année|f|year
+heure|f|hour, time
+minute|f|minute
+temps|m|time, weather
+matin|m|morning
+soir|m|evening
+nuit|f|night
+lundi|m|Monday
+mardi|m|Tuesday
+mercredi|m|Wednesday
+jeudi|m|Thursday
+vendredi|m|Friday
+samedi|m|Saturday
+dimanche|m|Sunday
+printemps|m|spring
+été|m|summer
+automne|m|autumn, fall
+hiver|m|winter
+famille|f|family
+mère|f|mother
+père|m|father
+frère|m|brother
+sœur|f|sister
+fils|m|son
+fille|f|daughter, girl
+enfant|m|child
+mari|m|husband
+femme|f|woman, wife
+homme|m|man
+garçon|m|boy
+ami|m|friend
+amie|f|friend (female)
+grand-mère|f|grandmother
+grand-père|m|grandfather
+bébé|m|baby
+personne|f|person, nobody
+gens|m|people
+professeur|m|teacher, professor
+médecin|m|doctor
+voisin|m|neighbor
+tête|f|head
+main|f|hand
+pied|m|foot
+bras|m|arm
+jambe|f|leg
+œil|m|eye
+yeux|m|eyes
+nez|m|nose
+bouche|f|mouth
+oreille|f|ear
+dent|f|tooth
+cœur|m|heart
+dos|m|back
+ventre|m|belly, stomach
+cheveux|m|hair
+visage|m|face
+doigt|m|finger
+pain|m|bread
+fromage|m|cheese
+beurre|m|butter
+lait|m|milk
+eau|f|water
+vin|m|wine
+bière|f|beer
+café|m|coffee
+thé|m|tea
+jus|m|juice
+pomme|f|apple
+banane|f|banana
+orange|f|orange
+fraise|f|strawberry
+citron|m|lemon
+légume|m|vegetable
+fruit|m|fruit
+pomme de terre|f|potato
+tomate|f|tomato
+carotte|f|carrot
+viande|f|meat
+poulet|m|chicken
+poisson|m|fish
+œuf|m|egg
+riz|m|rice
+pâtes|f|pasta
+soupe|f|soup
+salade|f|salad
+sucre|m|sugar
+sel|m|salt
+poivre|m|pepper
+gâteau|m|cake
+chocolat|m|chocolate
+glace|f|ice cream, ice, mirror
+petit déjeuner|m|breakfast
+déjeuner|m|lunch
+dîner|m|dinner
+repas|m|meal
+faim|f|hunger
+soif|f|thirst
+croissant|m|croissant
+chat|m|cat
+chien|m|dog
+oiseau|m|bird
+cheval|m|horse
+vache|f|cow
+cochon|m|pig
+mouton|m|sheep
+lapin|m|rabbit
+souris|f|mouse
+loup|m|wolf
+ours|m|bear
+lion|m|lion
+éléphant|m|elephant
+singe|m|monkey
+renard|m|fox
+canard|m|duck
+grenouille|f|frog
+phoque|m|seal
+papillon|m|butterfly
+abeille|f|bee
+araignée|f|spider
+serpent|m|snake
+requin|m|shark
+baleine|f|whale
+animal|m|animal
+rouge|a|red
+bleu|a|blue
+vert|a|green
+jaune|a|yellow
+noir|a|black
+blanc|a|white
+gris|a|gray
+rose|a|pink
+violet|a|purple
+marron|a|brown
+maison|f|house, home
+appartement|m|apartment
+ville|f|city, town
+village|m|village
+rue|f|street
+école|f|school
+université|f|university
+magasin|m|store, shop
+marché|m|market
+restaurant|m|restaurant
+hôpital|m|hospital
+gare|f|train station
+aéroport|m|airport
+plage|f|beach
+montagne|f|mountain
+forêt|f|forest
+mer|f|sea
+rivière|f|river
+lac|m|lake
+jardin|m|garden
+parc|m|park
+pays|m|country
+monde|m|world
+église|f|church
+pont|m|bridge
+bibliothèque|f|library
+chambre|f|bedroom, room
+cuisine|f|kitchen, cooking
+porte|f|door
+fenêtre|f|window
+table|f|table
+chaise|f|chair
+lit|m|bed
+mur|m|wall
+ordinateur|m|computer
+téléphone|m|phone
+livre|m|book
+stylo|m|pen
+papier|m|paper
+sac|m|bag
+clé|f|key
+voiture|f|car
+vélo|m|bicycle
+train|m|train
+avion|m|plane
+bateau|m|boat
+billet|m|ticket
+argent|m|money, silver
+prix|m|price, prize
+travail|m|work, job
+bureau|m|office, desk
+film|m|movie
+musique|f|music
+jeu|m|game
+sport|m|sport
+chanson|f|song
+image|f|picture
+lettre|f|letter
+mot|m|word
+langue|f|language, tongue
+question|f|question
+réponse|f|answer
+problème|m|problem
+idée|f|idea
+histoire|f|story, history
+nom|m|name, noun
+vie|f|life
+mort|f|death
+amour|m|love
+paix|f|peace
+guerre|f|war
+chance|f|luck
+rêve|m|dream
+chemise|f|shirt
+pantalon|m|pants
+robe|f|dress
+chaussure|f|shoe
+chapeau|m|hat
+manteau|m|coat
+soleil|m|sun
+lune|f|moon
+étoile|f|star
+ciel|m|sky
+pluie|f|rain
+neige|f|snow
+vent|m|wind
+nuage|m|cloud
+feu|m|fire
+terre|f|earth, land
+arbre|m|tree
+fleur|f|flower
+herbe|f|grass
+pierre|f|stone
+île|f|island
+être|v|to be
+avoir|v|to have
+aller|v|to go
+faire|v|to do, to make
+dire|v|to say, to tell
+pouvoir|v|to be able to, can
+vouloir|v|to want
+savoir|v|to know (a fact), to know how
+devoir|v|to have to, must, to owe
+voir|v|to see
+venir|v|to come
+prendre|v|to take
+mettre|v|to put, to place
+donner|v|to give
+parler|v|to speak, to talk
+aimer|v|to love, to like
+manger|v|to eat
+boire|v|to drink
+dormir|v|to sleep
+marcher|v|to walk, to work (function)
+courir|v|to run
+regarder|v|to watch, to look at
+écouter|v|to listen
+entendre|v|to hear
+lire|v|to read
+écrire|v|to write
+chanter|v|to sing
+danser|v|to dance
+jouer|v|to play
+travailler|v|to work
+étudier|v|to study
+apprendre|v|to learn
+comprendre|v|to understand
+penser|v|to think
+croire|v|to believe
+trouver|v|to find
+chercher|v|to look for, to search
+acheter|v|to buy
+vendre|v|to sell
+payer|v|to pay
+ouvrir|v|to open
+fermer|v|to close
+commencer|v|to begin, to start
+finir|v|to finish
+attendre|v|to wait
+arriver|v|to arrive
+partir|v|to leave
+rester|v|to stay, to remain
+sortir|v|to go out
+entrer|v|to enter
+tomber|v|to fall
+porter|v|to carry, to wear
+appeler|v|to call
+demander|v|to ask
+répondre|v|to answer
+aider|v|to help
+habiter|v|to live (reside)
+vivre|v|to live
+mourir|v|to die
+rire|v|to laugh
+pleurer|v|to cry
+connaître|v|to know (a person or place)
+essayer|v|to try
+oublier|v|to forget
+changer|v|to change
+choisir|v|to choose
+utiliser|v|to use
+nager|v|to swim
+voyager|v|to travel
+conduire|v|to drive
+gagner|v|to win, to earn
+perdre|v|to lose
+envoyer|v|to send
+recevoir|v|to receive
+devenir|v|to become
+construire|v|to build
+dessiner|v|to draw
+grand|a|big, tall, large
+petit|a|small, little
+bon|a|good
+mauvais|a|bad
+beau|a|beautiful, handsome
+joli|a|pretty
+nouveau|a|new
+vieux|a|old
+jeune|a|young
+long|a|long
+court|a|short
+haut|a|high, tall
+bas|a|low
+chaud|a|hot, warm
+froid|a|cold
+heureux|a|happy
+triste|a|sad
+content|a|glad, pleased
+fatigué|a|tired
+malade|a|sick, ill
+fort|a|strong, loud
+faible|a|weak
+facile|a|easy
+difficile|a|difficult
+vrai|a|true
+faux|a|false, fake
+riche|a|rich
+pauvre|a|poor
+propre|a|clean, own
+sale|a|dirty
+plein|a|full
+vide|a|empty
+ouvert|a|open
+fermé|a|closed
+libre|a|free
+occupé|a|busy
+prêt|a|ready
+seul|a|alone, only
+même|a|same, even
+autre|a|other
+gentil|a|kind, nice
+drôle|a|funny
+intéressant|a|interesting
+important|a|important
+possible|a|possible
+sûr|a|sure, certain
+cher|a|expensive, dear
+lent|a|slow
+rapide|a|fast
+doux|a|soft, gentle, sweet
+dur|a|hard
+mignon|a|cute
+fou|a|crazy
+délicieux|a|delicious
+étrange|a|strange
+célèbre|a|famous
+`;
+const P={m:"masc. noun",f:"fem. noun",v:"verb",a:"adj.",d:"adv.",p:"prep.",c:"conj.",r:"pronoun",n:"number",x:"phrase"};
+const N=s=>s.toLowerCase().replace(/’/g,"'").replace(/œ/g,"oe").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+const W=DATA.trim().split("\n").map(l=>{const[f,p,t]=l.split("|"),e=t.split(", ");return{f,p,e,fk:N(f),ek:e.map(x=>N(x.replace(/\(.*?\)/g,"")).replace(/^to /,"").trim())}});
+const $=id=>document.getElementById(id);
+let m="auto";
+const sc=(k,q)=>k==q?3:k.startsWith(q)?2:(" "+k).includes(" "+q)?1:0;
+function look(raw){const q0=N(raw).replace(/^to /,"");if(!q0)return[];
+const run=q=>W.map(w=>{let s=0;if(m!="en")s=sc(w.fk,q);if(m!="fr")s=Math.max(s,...w.ek.map(k=>sc(k,q)));return{w,s}}).filter(x=>x.s).sort((a,b)=>b.s-a.s||a.w.f.length-b.w.f.length);
+let r=run(q0);if(!r.length&&q0.length>3&&/[sx]$/.test(q0))r=run(q0.slice(0,-1));return r.slice(0,40).map(x=>x.w)}
+const card=w=>'<div class="r"><div class="top"><b class="fr">'+w.f+'</b><span class="pos">'+P[w.p]+'</span><button data-s="'+w.f+'" title="Listen">🔊</button></div><div class="en">'+w.e.join(" · ")+'</div></div>';
+function modes(){$("modes").innerHTML=[["auto","Both ways"],["fr","French → English"],["en","English → French"]].map(a=>'<button data-m="'+a[0]+'"'+(a[0]==m?' class="on"':'')+'>'+a[1]+'</button>').join("")}
+function home(){$("q").value="";const w=W[Math.floor(Date.now()/864e5)%W.length];
+$("out").innerHTML='<div class="tag">Word of the day</div>'+card(w)+'<div class="tag">Browse A–Z</div><div class="abc">'+"ABCDEFGHIJLMNOPQRSTUVX".split("").map(l=>'<button data-l="'+l+'">'+l+'</button>').join("")+'</div><p class="cnt">'+W.length+' entries. Type above to search French or English.</p>'}
+function go(){const q=$("q").value;if(!q.trim())return home();const r=look(q);
+$("out").innerHTML=r.length?'<p class="cnt">'+r.length+' result'+(r.length>1?"s":"")+'</p>'+r.map(card).join(""):'<p class="none">No entry found. Try another spelling or the base form of the word.</p>'}
+function say(t){if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang="fr-FR";speechSynthesis.cancel();speechSynthesis.speak(u)}
+$("q").addEventListener("input",go);
+$("t").onclick=home;
+document.addEventListener("click",e=>{const d=e.target.dataset||{};
+if(d.m){m=d.m;modes();go()}
+if(d.s)say(d.s);
+if(d.l){const r=W.filter(w=>w.fk[0]==d.l.toLowerCase()).sort((a,b)=>a.fk<b.fk?-1:1);$("out").innerHTML='<p class="cnt">'+r.length+' words starting with '+d.l+'</p>'+r.map(card).join("")}});
+modes();home();
+</script>
+</body>
+</html>
